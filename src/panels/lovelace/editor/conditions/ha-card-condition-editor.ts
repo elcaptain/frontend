@@ -10,6 +10,7 @@ import {
   mdiPlaylistEdit,
 } from "@mdi/js";
 import deepClone from "deep-clone-simple";
+import type { HassServiceTarget } from "home-assistant-js-websocket";
 import type { PropertyValues } from "lit";
 import { LitElement, css, html, nothing } from "lit";
 import { customElement, property, state } from "lit/decorators";
@@ -32,6 +33,7 @@ import "../../../../components/ha-icon-button";
 import "../../../../components/ha-svg-icon";
 import "../../../../components/ha-tooltip";
 import "../../../../components/ha-yaml-editor";
+import "../../../config/automation/target/ha-automation-row-targets";
 import { showAlertDialog } from "../../../../dialogs/generic/show-dialog-box";
 import { haStyle } from "../../../../resources/styles";
 import type { HomeAssistant } from "../../../../types";
@@ -41,7 +43,9 @@ import type {
   Condition,
   LegacyCondition,
   NotCondition,
+  NumericStateCondition,
   OrCondition,
+  StateCondition,
 } from "../../common/validate-condition";
 import {
   checkConditionsMet,
@@ -228,6 +232,18 @@ export class HaCardConditionEditor extends LitElement {
       isNoEntityCondition(condition.condition, this._noEntity) ||
       containsNoEntityCondition(condition, this._noEntity);
 
+    const contextEntityId =
+      condition.condition === "state" || condition.condition === "numeric_state"
+        ? (condition as StateCondition | NumericStateCondition).entity ||
+          (this._entityContext?.mode === "current"
+            ? this._entityContext.entityId
+            : undefined)
+        : undefined;
+
+    const contextTarget: HassServiceTarget | undefined = contextEntityId
+      ? { entity_id: contextEntityId }
+      : undefined;
+
     return html`
       <div class="container">
         <ha-expansion-panel left-chevron>
@@ -257,6 +273,12 @@ export class HaCardConditionEditor extends LitElement {
             ${this.hass.localize(
               `ui.panel.lovelace.editor.condition-editor.condition.${condition.condition}.label`
             ) || condition.condition}
+            ${contextTarget
+              ? html`<ha-automation-row-targets
+                  .target=${contextTarget}
+                  .interactive=${true}
+                ></ha-automation-row-targets>`
+              : nothing}
           </h3>
           <ha-automation-row-event-chip
             .show=${this._testingResult !== undefined}
@@ -495,6 +517,10 @@ export class HaCardConditionEditor extends LitElement {
         margin: 0;
         font-size: inherit;
         font-weight: inherit;
+        display: flex;
+        align-items: center;
+        gap: var(--ha-space-2);
+        flex-wrap: wrap;
       }
       .content {
         padding: 12px;

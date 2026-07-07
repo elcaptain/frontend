@@ -29,6 +29,13 @@ export const e2eTestPanels: Panels = {
     config: null,
     url_path: "history",
   },
+  security: {
+    component_name: "security",
+    icon: "mdi:shield-home",
+    title: "security",
+    config: null,
+    url_path: "security",
+  },
   config: {
     component_name: "config",
     icon: "mdi:cog",
